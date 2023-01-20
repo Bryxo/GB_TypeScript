@@ -1,9 +1,12 @@
 import { renderSearchFormBlock } from './search-form.js';
 import { renderSearchStubBlock } from './search-results.js';
-import { renderUserBlock } from './user.js';
+import { getFavoritesAmount, getUserData, renderUserBlock } from './user.js';
 //import { renderToast } from './lib.js'
 window.addEventListener('DOMContentLoaded', () => {
-    renderUserBlock('Pablo', '/img/avatar.png', 12, 'Pablo');
+    const storageUserData = JSON.parse(localStorage.getItem('user'));
+    const userData = getUserData(storageUserData);
+    const favoritesAmount = getFavoritesAmount(storageUserData);
+    renderUserBlock(userData.username, userData.avatarUrl, favoritesAmount);
     renderSearchFormBlock();
     renderSearchStubBlock();
     // renderToast(
@@ -11,3 +14,5 @@ window.addEventListener('DOMContentLoaded', () => {
     //     {name: 'Понял', handler: () => {console.log('Уведомление закрыто')}}
     // )
 });
+/* Для тестирования user из localStorage */
+localStorage.setItem('user', JSON.stringify({ username: 'Pedro', avatarUrl: '/img/avatar.png', favoritesAmount: '12' }));
