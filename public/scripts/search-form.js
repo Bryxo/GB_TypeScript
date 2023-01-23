@@ -1,4 +1,5 @@
-import { renderBlock } from './lib.js';
+import { fetchHomeApi, renderBlock } from './lib.js';
+import { renderSearchResultsBlock } from './search-results.js';
 const TWO_DAYS = 2;
 const ONE_MONTH = 1;
 const TWO_MONTHS = 2;
@@ -54,33 +55,19 @@ export function renderSearchFormBlock(dateStart = getStringFromDate(minDate), da
 function getSearchFormData(e) {
     e.preventDefault();
     const form = new FormData(document.querySelector('form#searchForm'));
-    const formValues = {
-        city: form.get('city').toString(),
-        coordinates: [parseFloat(form.get('coordinates').toString().split(',')[0]), parseFloat(form.get('coordinates').toString().split(',')[1])],
-        checkInDate: getDateFromString(form.get('check-in-date').toString()),
-        checkOutDate: getDateFromString(form.get('check-out-date').toString()),
-        maxPrice: isNaN(parseInt(form.get('price').toString())) ? 0 : parseInt(form.get('price').toString())
-    };
     const searchFormData = {
-        'city': formValues.city,
-        'coordinates': [formValues.coordinates[0], formValues.coordinates[1]],
-        'check-in-date': formValues.checkInDate,
-        'check-out-date': formValues.checkOutDate,
-        'max-price': formValues.maxPrice
+        coordinates: form.get('coordinates').toString(),
+        checkInDate: getDateFromString(form.get('check-in-date').toString()).getTime(),
+        checkOutDate: getDateFromString(form.get('check-out-date').toString()).getTime(),
     };
-    search(searchFormData, delay);
+    const formPrice = parseInt(form.get('price').toString());
+    isNaN(formPrice) || formPrice < 1 ? null : searchFormData.maxPrice = formPrice;
+    search(searchFormData, renderSearchResultsBlock);
 }
 export function search(params, render) {
-    setTimeout(() => {
-        const rand = Math.random() * 10;
-        rand >= 5 ? render(new Error('Ошбика поиска')) : render(null, []);
-    }, 2000);
-}
-function delay(err, places) {
-    if (err) {
-        throw err;
-    }
-    if (places) {
-        console.log(places);
-    }
+    fetchHomeApi({
+        method: 'GET',
+        endPoint: '/places',
+        parameters: params
+    }).then((places) => render(places));
 }

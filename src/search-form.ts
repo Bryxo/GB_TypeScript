@@ -1,5 +1,6 @@
-import { renderBlock } from './lib.js'
-import { IPlaces, ISearchFormData } from './interfaces.js'
+import { fetchHomeApi, renderBlock } from './lib.js'
+import { IFindPlacesParams, IPlaces, ISearchFormData } from './interfaces.js'
+import { renderSearchResultsBlock } from './search-results.js'
 
 const TWO_DAYS = 2
 const ONE_MONTH = 1
@@ -9,6 +10,7 @@ const getStringFromDate = (date: Date): string => {
   const year = date.getFullYear()
   const month = (date.getMonth() + ONE_MONTH).toString().padStart(2, '0')
   const day = date.getDate().toString().padStart(2,'0')
+
   return `${year}-${month}-${day}`
 }
 const getDateFromString = (date: string): Date => new Date(+date.split('-')[0], +date.split('-')[1], +date.split('-')[2])
@@ -20,7 +22,7 @@ const minCheckoutDate: Date = new Date(minDate.getFullYear(), minDate.getMonth()
 export function renderSearchFormBlock(dateStart: string = getStringFromDate(minDate), dateEnd: string = getStringFromDate(minCheckoutDate)) {
   const dateStartFromString = getDateFromString(dateStart)
   const dateEndFromString = getDateFromString(dateEnd)
-
+  
   renderBlock(
     'search-form-block',
     `
@@ -67,38 +69,23 @@ function getSearchFormData(e: Event): void {
 
   const form = new FormData(document.querySelector('form#searchForm'))
 
-  const formValues = {
-    city: form.get('city').toString(),
-    coordinates: [parseFloat(form.get('coordinates').toString().split(',')[0]), parseFloat(form.get('coordinates').toString().split(',')[1])],
-    checkInDate: getDateFromString(form.get('check-in-date').toString()),
-    checkOutDate: getDateFromString(form.get('check-out-date').toString()),
-    maxPrice: isNaN(parseInt(form.get('price').toString())) ? 0 : parseInt(form.get('price').toString())
+  const searchFormData: IFindPlacesParams = {
+    coordinates: form.get('coordinates').toString(),
+    checkInDate: getDateFromString(form.get('check-in-date').toString()).getTime(),
+    checkOutDate: getDateFromString(form.get('check-out-date').toString()).getTime(),
   }
 
-  const searchFormData: ISearchFormData = {
-    'city': formValues.city,
-    'coordinates': [formValues.coordinates[0], formValues.coordinates[1]],
-    'check-in-date': formValues.checkInDate,
-    'check-out-date': formValues.checkOutDate,
-    'max-price': formValues.maxPrice
-  }
+  const formPrice = parseInt(form.get('price').toString());
+
+  isNaN(formPrice) || formPrice < 1 ? null : searchFormData.maxPrice = formPrice
   
-  search(searchFormData, delay)
+  search(searchFormData, renderSearchResultsBlock)
 }
 
-export function search(params: ISearchFormData, render: (err?: Error, places?: IPlaces[]) => void): void { 
-  setTimeout(() => {
-    const rand = Math.random() * 10
-    rand >= 5 ? render(new Error('Ошбика поиска')) : render(null, [])
-  }, 2000)
-}
-
-function delay(err?: Error, places?: IPlaces[]): void { 
-  if (err) { 
-    throw err
-  }
-
-  if (places) { 
-    console.log(places);
-  }
+export function search(params: IFindPlacesParams, render: (places: IPlaces[] |  Record<string, string>) => void): void { 
+  fetchHomeApi({
+    method: 'GET',
+    endPoint: '/places',
+    parameters: params
+  }).then((places) => render(places));
 }
