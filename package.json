@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "types": "./public/scripts/types/index.d.ts",
   "scripts": {
     "build": "rimraf public/scripts && tsc",
     "build:dev": "rm -rf public/scripts && tsc -p tsconfig-dev.json",

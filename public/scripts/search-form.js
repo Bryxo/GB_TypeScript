@@ -1,5 +1,6 @@
 import { fetchHomeApi, renderBlock } from './lib.js';
 import { renderSearchResultsBlock } from './search-results.js';
+import { FlatRentSdk } from './flat-rent-sdk.js';
 const TWO_DAYS = 2;
 const ONE_MONTH = 1;
 const TWO_MONTHS = 2;
@@ -9,7 +10,7 @@ const getStringFromDate = (date) => {
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
-const getDateFromString = (date) => new Date(+date.split('-')[0], +date.split('-')[1], +date.split('-')[2]);
+const getDateFromString = (date) => new Date(+date.split('-')[0], +date.split('-')[1] - 1, +date.split('-')[2]);
 const minDate = new Date();
 const maxDate = new Date(minDate.getFullYear(), minDate.getMonth() + ONE_MONTH, (new Date(minDate.getFullYear(), minDate.getMonth() + TWO_MONTHS, 0)).getDate());
 const minCheckoutDate = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate() + TWO_DAYS);
@@ -25,10 +26,10 @@ export function renderSearchFormBlock(dateStart = getStringFromDate(minDate), da
             <input id="city" name="city" type="text" value="Санкт-Петербург" />
             <input name="coordinates" type="hidden" value="59.9386,30.3141" />
           </div>
-          <!--<div class="providers">
+          <div class="providers">
             <label><input type="checkbox" name="provider" value="homy" checked /> Homy</label>
             <label><input type="checkbox" name="provider" value="flat-rent" checked /> FlatRent</label>
-          </div>--!>
+          </div>
         </div>
         <div class="row">
           <div>
@@ -56,18 +57,60 @@ function getSearchFormData(e) {
     e.preventDefault();
     const form = new FormData(document.querySelector('form#searchForm'));
     const searchFormData = {
+        city: form.get('city').toString(),
         coordinates: form.get('coordinates').toString(),
         checkInDate: getDateFromString(form.get('check-in-date').toString()).getTime(),
         checkOutDate: getDateFromString(form.get('check-out-date').toString()).getTime(),
     };
     const formPrice = parseInt(form.get('price').toString());
     isNaN(formPrice) || formPrice < 1 ? null : searchFormData.maxPrice = formPrice;
-    search(searchFormData, renderSearchResultsBlock);
+    const homy = form.getAll('provider').indexOf('homy') !== -1 ? true : false;
+    const flatRent = form.getAll('provider').indexOf('flat-rent') !== -1 ? true : false;
+    search(searchFormData, renderSearchResultsBlock, homy, flatRent);
 }
-export function search(params, render) {
-    fetchHomeApi({
-        method: 'GET',
-        endPoint: '/places',
-        parameters: params
-    }).then((places) => render(places));
+export function search(params, render, homy, flatRent) {
+    let allPlaces = [];
+    if (flatRent) {
+        const flats = new FlatRentSdk();
+        const parameters = {
+            city: params.city,
+            checkInDate: new Date(params.checkInDate),
+            checkOutDate: new Date(params.checkOutDate),
+        };
+        params.maxPrice ? parameters.priceLimit = params.maxPrice : null;
+        flats.search(parameters).then(result => {
+            if (!Array.isArray(result)) {
+                render(result);
+            }
+            else {
+                const places = result.map(flat => ({
+                    id: flat.id,
+                    image: flat.photos[0],
+                    name: flat.title,
+                    description: flat.details,
+                    remoteness: null,
+                    bookedDates: flat.bookedDates.map(bookDate => bookDate.getTime()),
+                    price: flat.totalPrice
+                }));
+                allPlaces = [...allPlaces, ...places];
+                render(allPlaces);
+            }
+        }).catch(err => render(err));
+    }
+    if (homy) {
+        delete params.city;
+        fetchHomeApi({
+            method: 'GET',
+            endPoint: '/places',
+            parameters: params
+        }).then((places) => {
+            if (Array.isArray(places)) {
+                allPlaces = [...allPlaces, ...places];
+                render(allPlaces);
+            }
+            else {
+                render(places);
+            }
+        });
+    }
 }
