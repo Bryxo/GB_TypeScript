@@ -1,6 +1,8 @@
 export function renderBlock(elementId, html) {
     const element = document.getElementById(elementId);
-    element.innerHTML = html;
+    if (element?.innerHTML) {
+        element.innerHTML = html;
+    }
 }
 export function renderToast(message, action) {
     let messageText = '';

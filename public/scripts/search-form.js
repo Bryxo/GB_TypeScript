@@ -51,22 +51,30 @@ export function renderSearchFormBlock(dateStart = getStringFromDate(minDate), da
       </fieldset>
     </form>
     `);
-    document.querySelector('form#searchForm').addEventListener('submit', getSearchFormData);
+    document.querySelector('form#searchForm')?.addEventListener('submit', getSearchFormData);
 }
 function getSearchFormData(e) {
     e.preventDefault();
-    const form = new FormData(document.querySelector('form#searchForm'));
-    const searchFormData = {
-        city: form.get('city').toString(),
-        coordinates: form.get('coordinates').toString(),
-        checkInDate: getDateFromString(form.get('check-in-date').toString()).getTime(),
-        checkOutDate: getDateFromString(form.get('check-out-date').toString()).getTime(),
-    };
-    const formPrice = parseInt(form.get('price').toString());
-    isNaN(formPrice) || formPrice < 1 ? null : searchFormData.maxPrice = formPrice;
-    const homy = form.getAll('provider').indexOf('homy') !== -1 ? true : false;
-    const flatRent = form.getAll('provider').indexOf('flat-rent') !== -1 ? true : false;
-    search(searchFormData, renderSearchResultsBlock, homy, flatRent);
+    const formHTML = document.querySelector('form#searchForm');
+    if (formHTML) {
+        const form = new FormData(formHTML);
+        const city = form.get('city')?.toString();
+        const coordinates = form.get('coordinates')?.toString();
+        const checkInDate = form.get('check-in-date')?.toString();
+        const checkOutDate = form.get('check-out-date')?.toString();
+        const price = form.get('price')?.toString();
+        const searchFormData = {
+            city: city,
+            coordinates: coordinates,
+            checkInDate: checkInDate ? getDateFromString(checkInDate).getTime() : 0,
+            checkOutDate: checkOutDate ? getDateFromString(checkOutDate).getTime() : 0,
+        };
+        const formPrice = typeof price === 'string' ? parseInt(price) : 0;
+        isNaN(formPrice) || formPrice < 1 ? null : searchFormData.maxPrice = formPrice;
+        const homy = form.getAll('provider').indexOf('homy') !== -1 ? true : false;
+        const flatRent = form.getAll('provider').indexOf('flat-rent') !== -1 ? true : false;
+        search(searchFormData, renderSearchResultsBlock, homy, flatRent);
+    }
 }
 export async function search(params, render, homy, flatRent) {
     render(await FindPlaces.findPlaces(params, homy, flatRent));

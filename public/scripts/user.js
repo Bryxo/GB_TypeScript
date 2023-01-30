@@ -17,28 +17,26 @@ export function renderUserBlock() {
     `);
 }
 export function getUserData() {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem('user') || '');
     const emptyUser = {
         username: 'unknown',
         avatarUrl: '/img/empty.png'
     };
     const result = {
-        username: null,
-        avatarUrl: null
+        username: isUser(user) ? user.username : emptyUser.username,
+        avatarUrl: isUser(user) ? user.avatarUrl : emptyUser.avatarUrl
     };
-    if (typeof user !== 'object' || !user) {
-        return emptyUser;
-    }
-    Object.hasOwn(user, 'username') && user['username'] ? result.username = user['username'] : result.username = emptyUser.username;
-    Object.hasOwn(user, 'avatarUrl') && user['avatarUrl'] ? result.avatarUrl = user['avatarUrl'] : result.avatarUrl = emptyUser.avatarUrl;
     return result;
+}
+function isUser(user) {
+    return typeof user === 'object' && user !== null && 'username' in user && 'avatarUrl' in user;
 }
 export function getFavoritesAmount() {
     const favoriteItems = getFavorites();
     return favoriteItems.length;
 }
 function getFavorites() {
-    const favoriteItems = JSON.parse(localStorage.getItem('favoriteItems'));
+    const favoriteItems = JSON.parse(localStorage.getItem('favoriteItems') || '');
     if (!Array.isArray(favoriteItems) || favoriteItems.length === 0) {
         return [];
     }

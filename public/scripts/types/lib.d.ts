@@ -1,2 +1,8 @@
-export declare function renderBlock(elementId: any, html: any): void;
-export declare function renderToast(message: any, action: any): void;
+export declare function renderBlock(elementId: string, html: string): void;
+export declare function renderToast(message: {
+    text: string;
+    type: string;
+} | null, action: {
+    name: string;
+    handler: () => void;
+} | null): void;

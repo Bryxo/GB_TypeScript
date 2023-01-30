@@ -36,7 +36,7 @@ export class FindPlaces {
     static async getFlatsSDK(params) {
         const flats = new FlatRentSdk();
         const parameters = {
-            city: params.city,
+            city: params?.city ? params.city : '',
             checkInDate: new Date(params.checkInDate),
             checkOutDate: new Date(params.checkOutDate),
         };
@@ -50,7 +50,7 @@ export class FindPlaces {
             image: flat.photos[0],
             name: flat.title,
             description: flat.details,
-            remoteness: null,
+            remoteness: 0,
             bookedDates: flat.bookedDates.map(bookDate => bookDate.getTime()),
             price: flat.totalPrice
         }));
@@ -74,5 +74,6 @@ export class FindPlaces {
         if (orderType === 'DESC') {
             return places.sort((a, b) => a[orderBy] <= b[orderBy] ? 1 : -1);
         }
+        return places;
     }
 }

@@ -38,7 +38,7 @@ export function renderSearchResultsBlock(places) {
         html += '</ul>';
         renderBlock('search-results-block', html);
         renderResultList(places);
-        document.querySelector('#searchSort').addEventListener('change', (e) => sortResults(e.target, places));
+        document.querySelector('#searchSort')?.addEventListener('change', (e) => sortResults(e.target, places));
     }
 }
 function renderResultList(places) {
@@ -71,16 +71,14 @@ function renderResultList(places) {
 }
 function toggleFavoriteItem(e) {
     if (e.target instanceof HTMLDivElement) {
+        const id = e.target.id;
+        const image = e.target.nextElementSibling instanceof HTMLImageElement ? e.target.nextElementSibling.src : '';
+        const name = e.target.closest('.result')?.querySelector('.result-info--name')?.textContent;
         const place = {
-            id: null,
-            image: null,
-            name: null
+            id: id,
+            image: image,
+            name: name ? name : ''
         };
-        place.id = e.target.id;
-        if (e.target.nextElementSibling instanceof HTMLImageElement) {
-            place.image = e.target.nextElementSibling.src;
-        }
-        place.name = e.target.closest('.result').querySelector('.result-info--name').textContent;
         toggleFavorites(place);
         e.target.classList.toggle('active');
         renderUserBlock();
